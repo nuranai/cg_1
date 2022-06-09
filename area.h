@@ -7,9 +7,10 @@ class Area : public QWidget
 {
     Q_OBJECT
 private:
-    Shape* triangle;
-    Shape* square;
+    Shape* arrow;
     int myTimer;
+    float stopAngle = 90;
+    float totalAngle = 0;
 //    float alpha;
     void setNewCoords(Shape* shape, float**);
     void translateShape(float** oldMatrix, Coords* value);
@@ -19,8 +20,7 @@ private:
 public:
     Area(QWidget *parent = 0);
     ~Area() {
-        delete triangle;
-        delete square;
+        delete arrow;
     };
 public slots:
     void start_prog();

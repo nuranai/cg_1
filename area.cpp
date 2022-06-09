@@ -2,108 +2,74 @@
 #include <QPainter>
 #include <QTimerEvent>
 #include <iostream>
+#include "math.h"
 
 using namespace std;
 
 Area::Area(QWidget *parent):QWidget(parent)
 {
-    Coords** triangleCoords = new Coords*[3];
-    triangleCoords[0] = new Coords(100, 100);
-    triangleCoords[1] = new Coords(150, 200);
-    triangleCoords[2] = new Coords(200, 150);
-    Coords** squareCoords = new Coords*[4];
-    squareCoords[0] = new Coords(100, 100);
-    squareCoords[1] = new Coords(200, 100);
-    squareCoords[2] = new Coords(200, 200);
-    squareCoords[3] = new Coords(100, 200);
-    triangle = new Shape(3, triangleCoords);
-    square = new Shape(4, squareCoords);
+    Coords **arrowCoords = new Coords*[6];
+    arrowCoords[0] = new Coords(150, 150);
+    arrowCoords[1] = new Coords(165, 70);
+    arrowCoords[2] = new Coords(180, 70);
+    arrowCoords[3] = new Coords(150, 0);
+    arrowCoords[4] = new Coords(120, 70);
+    arrowCoords[5] = new Coords(135, 70);
+
+    arrow = new Shape(6, arrowCoords);
+
     setFixedSize(QSize(300, 300));
 }
 
 void Area::showEvent(QShowEvent *) {
-//    update();
 }
 
 void Area::paintEvent(QPaintEvent *) {
     QPainter painter(this);
+    painter.setPen(Qt::black);
+    painter.drawLine(150, 150, 300, 150);
     painter.setPen(Qt::red);
-    float **triangleMatrix = new float*[3];
-    float **squareMatrix = new float*[3];
+    float **arrowMatrix = new float*[3];
     for (int i = 0; i < 3; i++) {
-        triangleMatrix[i] = new float[3];
-        squareMatrix[i] = new float[3];
+        arrowMatrix[i] = new float[3];
         for (int j = 0; j < 3; j++) {
             if (i == j) {
-                triangleMatrix[i][j] = 1;
-                squareMatrix[i][j] = 1;
+                arrowMatrix[i][j] = 1;
             }
             else {
-                triangleMatrix[i][j] = 0;
-                squareMatrix[i][j] = 0;
+                arrowMatrix[i][j] = 0;
             }
         }
     }
-    float bamp = 0.1f;
-    float centerX = 0, centerY = 0;
-    for (int i = 0; i < 3; i++) {
-        centerX += triangle->getCoords(i)->getX();
-        centerY += triangle->getCoords(i)->getY();
-    }
-    Coords* triangleCenter = new Coords(-centerX / 3, -centerY / 3);
-    centerX = 0;
-    centerY = 0;
-    for (int i = 0; i < 4; i++) {
-        centerX += square->getCoords(i)->getX();
-        centerY += square->getCoords(i)->getY();
-    }
-    Coords* squareCenter = new Coords(-centerX / 4, -centerY / 4);
-    // triangle
-    translateShape(triangleMatrix, triangleCenter);
-    scaleShape(triangleMatrix, 0.95f);
-    rotateShape(triangleMatrix, bamp);
-    Coords* reverseCenter = new Coords(-triangleCenter->getX(), -triangleCenter->getY());
-    translateShape(triangleMatrix, reverseCenter);
-    setNewCoords(triangle, triangleMatrix);
-    //square
-    translateShape(squareMatrix, squareCenter);
-    scaleShape(squareMatrix, 1.01f);
-    Coords* reverseCenterSquare = new Coords(-squareCenter->getX(), -squareCenter->getY());
-    translateShape(squareMatrix, reverseCenterSquare);
-    setNewCoords(square, squareMatrix);
+    float bamp = totalAngle != 0 ? 0.01f : 0;
+    Coords *translateCoords = new Coords(-150, -150);
+    translateShape(arrowMatrix, translateCoords);
+    rotateShape(arrowMatrix, bamp);
+    Coords *reverseCoords = new Coords(150, 150);
+    translateShape(arrowMatrix, reverseCoords);
+    setNewCoords(arrow, arrowMatrix);
 
-    int triangleN = triangle->getN();
-    for (int i = 0; i < triangleN; i++) {
-        Coords* first = triangle->getCoords(i);
-        Coords* second = triangle->getCoords((i + 1) % triangleN);
-        painter.drawLine(first->getX(), first->getY(), second->getX(), second->getY());
-    }
-    int squareN = square->getN();
-    for (int i = 0; i < squareN; i++) {
-        Coords* first = square->getCoords(i);
-        Coords* second = square->getCoords((i + 1) % squareN);
+    int arrowN = arrow->getN();
+    for (int i = 0; i < arrowN; i++) {
+        Coords* first = arrow->getCoords(i);
+        Coords* second = arrow->getCoords((i + 1) % arrowN);
         painter.drawLine(first->getX(), first->getY(), second->getX(), second->getY());
     }
     for (int i = 0; i < 3; i++) {
-        delete [] triangleMatrix[i];
+        delete [] arrowMatrix[i];
     }
-    delete [] triangleMatrix;
+    delete [] arrowMatrix;
 }
 
 void Area::timerEvent(QTimerEvent *event) {
     if (event->timerId() == myTimer) // если наш таймер
     {
-        Coords * first = triangle->getCoords(0);
-        Coords * second = triangle->getCoords(1);
-        float x1 = first->getX();
-        float x2 = second->getX();
-        float y1 = first->getY();
-        float y2 = second->getY();
-        double length = sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
-        if (length < 0.5)
+        totalAngle += 0.01f * 180 / M_PI;
+        cout << totalAngle << endl;
+        if (totalAngle >= stopAngle)
             killTimer(myTimer);
         else
-            update(); // обновить внешний вид
+            update();
     }
     else
         QWidget::timerEvent(event); // иначе передать для стандартной
@@ -111,7 +77,6 @@ void Area::timerEvent(QTimerEvent *event) {
 }
 
 void Area::hideEvent(QHideEvent *) {
-//    killTimer(myTimer);
 }
 
 void Area::start_prog() {
